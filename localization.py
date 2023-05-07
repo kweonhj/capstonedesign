@@ -6,14 +6,6 @@ Created on Sun May  7 23:23:29 2023
 @author: kweonhyuckjin
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun May  7 15:35:34 2023
-
-@author: kweonhyuckjin
-"""
-
 import cv2
 import torch
 import time
