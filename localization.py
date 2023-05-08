@@ -13,7 +13,7 @@ from yolov5 import YOLOv5
 import numpy as np
 from PID import PID
 # Path to your custom weights file
-custom_weights_path = '/Users/kweonhyuckjin/opt/anaconda3/envs/capstonedesign/yolov5/yolov5s.pt'
+custom_weights_path = '/Users/kweonhyuckjin/miniforge3/envs/dysurf/capstonedesign-main/best1120.pt'
 
 # Load the YOLOv5 model with custom weights
 model = YOLOv5(custom_weights_path)
@@ -48,7 +48,7 @@ while True:
         # Read frame from the camera stream
         ret, frame = camera_stream.read()
         frame_height, frame_width, _ = frame.shape
-        print(frame_height, frame_width)
+        #print(frame_height, frame_width)
         if not ret:
             break
         
@@ -69,7 +69,7 @@ while True:
             confidence = detection[4]
             bbox = detection[:4].tolist()
 
-            if confidence > 0.5:
+            if confidence > 0.3:
                 # Draw bounding box on the frame
                 x1, y1, x2, y2 = map(int, bbox)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -77,20 +77,26 @@ while True:
                 
                 centroid_x = (x1 + x2) / 2
                 centroid_y = (y1 + y2) / 2
+                feedback_value_xy = None
+                feedback_value_z = None
                 if camera_stream_index == 0:
                     # Perform action for camera index 0 (x, y control)
                     feedback_value_xy = [centroid_x, centroid_y]
+                    print(feedback_value_xy)
                     #output_xy = pid_xy.update(feedback_value_xy)
                     # Modify the action code based on the PID output for x, y control
                     
                 elif camera_stream_index == 1:
                     # Perform action for camera index 1 (z control)
                     feedback_value_z = [centroid_y]
+                    print(feedback_value_z)
                     #output_z = pid_z.update(feedback_value_z)
                     # Modify the action code based on the PID output for z control
-                    location = np.concatenate((feedback_value_xy, feedback_value_z))
-                    print(location)
-                    print()
+            
+            if feedback_value_xy is not None and feedback_value_z is not None:
+                location = np.concatenate((feedback_value_xy, feedback_value_z))
+                print(location)
+                print()
                 # Output is error vector
                 
         # Display the frame with bounding boxes
