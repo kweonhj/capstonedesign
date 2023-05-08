@@ -26,16 +26,19 @@ prev_time = time.time()
 fps_interval = 10  # Calculate FPS every 10 frames
 frame_count = 0
 
-Setpoint_xy = [10.0, 5.0]
-Setpoint_z = [0.0]
+Setpoint_xy = np.array([0.5, 0.5])
+Setpoint_z = np.array([0.5])
 
 # PID parameters
-P = 1.0
-I = 0.0
-D = 0.0
+P = 0.1
+I = 0.1
+D = 0.1
 
 pid_xy = PID(P, I, D, Setpoint_xy)
 pid_z = PID(P, I, D, Setpoint_z)
+
+feedback_value_xy = None
+feedback_value_z = None
 
 # Create PID controllers for x, y, and z axes
 
@@ -48,6 +51,8 @@ while True:
         # Read frame from the camera stream
         ret, frame = camera_stream.read()
         frame_height, frame_width, _ = frame.shape
+        x_range = [0, frame_width]  # Replace with the actual range of x-axis values
+        y_range = [0, frame_height]
         #print(frame_height, frame_width)
         if not ret:
             break
@@ -61,7 +66,7 @@ while True:
             fps = fps_interval / elapsed_time
             prev_time = curr_time
             print(f"FPS: {fps:.2f}")
-            
+        
         # Process the detection results as per your requirements
         for detection in results.xyxy[0]:
             # Get object class, confidence, and bounding box coordinates
@@ -77,27 +82,34 @@ while True:
                 
                 centroid_x = (x1 + x2) / 2
                 centroid_y = (y1 + y2) / 2
-                feedback_value_xy = None
-                feedback_value_z = None
+                
+                
                 if camera_stream_index == 0:
                     # Perform action for camera index 0 (x, y control)
                     feedback_value_xy = [centroid_x, centroid_y]
-                    print(feedback_value_xy)
-                    #output_xy = pid_xy.update(feedback_value_xy)
+                    normalized_x = (feedback_value_xy[0] - x_range[0]) / (x_range[1] - x_range[0])
+                    normalized_y = (feedback_value_xy[1] - y_range[0]) / (y_range[1] - y_range[0])
+                    feedback_value_xy = [normalized_x, normalized_y]
+                    output_xy = pid_xy.update(feedback_value_xy)
                     # Modify the action code based on the PID output for x, y control
                     
                 elif camera_stream_index == 1:
                     # Perform action for camera index 1 (z control)
-                    feedback_value_z = [centroid_y]
-                    print(feedback_value_z)
-                    #output_z = pid_z.update(feedback_value_z)
+                    feedback_value_z = centroid_y
+                    normalized_z = (feedback_value_z - y_range[0]) / (y_range[1] - y_range[0])
+                    feedback_value_z = [normalized_z]
+                    output_z = pid_z.update(feedback_value_z)
                     # Modify the action code based on the PID output for z control
-            
             if feedback_value_xy is not None and feedback_value_z is not None:
+                # Concatenate feedback values into xyz
                 location = np.concatenate((feedback_value_xy, feedback_value_z))
+                output = np.concatenate((output_xy, output_z))
+                print('location :')
                 print(location)
                 print()
-                # Output is error vector
+                print('output : ')
+                print(output)
+                print()
                 
         # Display the frame with bounding boxes
         cv2.imshow(f'Camera {camera_indices[camera_streams.index(camera_stream)]}', frame)
