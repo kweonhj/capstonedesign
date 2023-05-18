@@ -16,7 +16,6 @@ for i = 1:size(B,1)
     Positions(i,1:3) = Bx(i,1:3).*1e-3;
 end
 
-
 % Define the initial guess for the coil centroid position and magnetic moment
 initialGuess = [1, 1, 0, 1e-3, 1e-3, 1e-3]; % [x, y, z, mx, my, mz]
 
@@ -24,11 +23,11 @@ initialGuess = [1, 1, 0, 1e-3, 1e-3, 1e-3]; % [x, y, z, mx, my, mz]
 lb = [-inf, -inf, -inf, -inf, -inf, -inf];
 ub = [inf, inf, inf, inf, inf, inf];
 
-% Call fmincon to minimize the difference
-options = optimoptions('fmincon', 'Display', 'iter');
-options.OptimalityTolerance = 1e-12;
+% Call lsqnonlin to perform the nonlinear least squares optimization
+options = optimoptions('lsqnonlin', 'Display', 'iter');
+options.FunctionTolerance = 1e-12;
 options.StepTolerance = 1e-12;
-[optVariables, ~] = fmincon(@(variables) objectiveFunction(variables, B, Positions), initialGuess, [], [], [], [], lb, ub, @(variables) constraintFunction(variables, B, Positions), options);
+[optVariables, ~] = lsqnonlin(@(variables) objectiveFunction(variables, B, Positions), initialGuess, lb, ub, options);
 
 % Extract the optimized variables
 optCentroid = optVariables(1:3);
@@ -41,18 +40,11 @@ disp('Optimized Magnetic Moment Vector:');
 disp(optMagneticMoment);
 
 % Objective function: Minimize the difference between measured B and B(r)
-function cost = objectiveFunction(variables, B, Positions)
+function error = objectiveFunction(variables, B, Positions)
     centroid = variables(1:3);
     magneticMoment = variables(4:6);
     B_predicted = calculateB(Positions, centroid, magneticMoment);
-    error = sum(abs(B - B_predicted), 2).^2;
-    cost = sum(error, 'all');
-end
-
-% Constraint function: Empty in this case (no constraints)
-function [c, ceq] = constraintFunction(~, ~, ~)
-    c = [];
-    ceq = [];
+    error = B - B_predicted;
 end
 
 % Function to calculate the theoretical magnetic field B(r)
