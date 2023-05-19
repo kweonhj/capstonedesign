@@ -136,7 +136,7 @@ def calc_target(pi, q1, q2, mini_batch):
     return target
     
 def main():
-    env = gym.make('Pendulum-v1') #환경 만들어주기(gym)  코일의 코어와 관련된 함수 찾아보기
+    env = gym.make('') #환경 만들어주기(gym)  코일의 코어와 관련된 함수 찾아보기
     memory = ReplayBuffer()
     q1, q2, q1_target, q2_target = QNet(lr_q), QNet(lr_q), QNet(lr_q), QNet(lr_q)
     pi = PolicyNet(lr_pi)
